@@ -69,6 +69,14 @@ void test_alloc_zero_size(){
     PASS("test_alloc_zero_size");
 }
 
+void test_alloc_huge_size(){
+    reset_allocator();
+    void* ptr = mem_alloc(24000000);
+    ASSERT_NOT_NULL(ptr, "test_alloc_huge_size", "Allocating hude size should return valid addr");
+
+    PASS("test_alloc_huge_size");
+}
+
 void test_simple_alloc(){
     reset_allocator();
     void* ptr = mem_alloc(100);
@@ -194,9 +202,53 @@ void test_fast_forward_coalescing_desc(){
     PASS("test_fast_forward_coalescing_desc"); 
 }
 
+void test_simple_realoc(){
+    reset_allocator();
+
+    int* ptr = mem_alloc(3 * sizeof(int));     
+
+    for (size_t i = 0; i < 3; ++i)
+    {
+        *(ptr+i) = 1;
+    }
+
+    ptr = mem_realloc(ptr, 4 * sizeof(int));     
+
+    for (size_t i = 0; i < 3; ++i)
+    {
+        ASSERT((*(ptr+i) == 1), "test_simple_realoc", "invalid copy value");
+    }
+
+    mem_free(ptr);
+    PASS("test_simple_realoc"); 
+}
+
+void test_realoc_null_value(){
+    reset_allocator();
+
+    int* ptr = mem_alloc(3 * sizeof(int));     
+    ptr = mem_realloc(NULL, 4 * sizeof(int));
+    ASSERT_NULL(ptr, "test_realoc_null_value", "value must be null");     
+
+    mem_free(ptr);
+    PASS("test_realoc_null_value"); 
+}
+
+void test_realoc_zero_value(){
+    reset_allocator();
+
+    int* ptr = mem_alloc(3 * sizeof(int));     
+    ptr = mem_realloc(ptr, 0);
+    ASSERT_NULL(ptr, "test_realoc_zero_value", "value must be null");     
+
+    mem_free(ptr);
+    PASS("test_realoc_zero_value"); 
+}
+
 void main(){
     test_init();
     test_alloc_zero_size();
+    test_alloc_huge_size();
     test_simple_alloc();
     test_multiple_allocs();
     test_free_simple();
@@ -205,4 +257,7 @@ void main(){
     test_heap_expansion_allocate_default();
     test_fast_forward_coalescing_asc();
     test_fast_forward_coalescing_desc();
+    test_simple_realoc();
+    test_realoc_null_value();
+    test_realoc_zero_value();
 }

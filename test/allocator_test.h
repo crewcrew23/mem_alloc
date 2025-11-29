@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HEAP_SIZE (1024 * 1024) // 1MB
+#define HEAP_SIZE (1024 * 4) // 4KB 
 #define MIN_BLOCK_SIZE 32 //byte
 
 typedef struct header 
