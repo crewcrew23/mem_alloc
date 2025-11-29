@@ -158,6 +158,42 @@ void test_heap_expansion_allocate_default(){
     PASS("test_heap_expansion_allocate_default"); 
 }
 
+void test_fast_forward_coalescing_asc(){
+    reset_allocator();
+    
+        void* ptr1 = mem_alloc(1);     
+    void* ptr2 = mem_alloc(3);     
+    void* ptr3 = mem_alloc(13);     
+    void* ptr4 = mem_alloc(23);     
+    void* ptr5 = mem_alloc(31);
+
+    mem_free(ptr1);
+    mem_free(ptr2);
+    mem_free(ptr3);
+    mem_free(ptr4);
+    mem_free(ptr5);
+
+    PASS("test_fast_forward_coalescing_asc"); 
+}
+
+void test_fast_forward_coalescing_desc(){
+    reset_allocator();
+    
+    void* ptr1 = mem_alloc(1);     
+    void* ptr2 = mem_alloc(3);     
+    void* ptr3 = mem_alloc(13);     
+    void* ptr4 = mem_alloc(23);     
+    void* ptr5 = mem_alloc(31);
+    
+    mem_free(ptr5);
+    mem_free(ptr4);
+    mem_free(ptr3);
+    mem_free(ptr2);
+    mem_free(ptr1);
+
+    PASS("test_fast_forward_coalescing_desc"); 
+}
+
 void main(){
     test_init();
     test_alloc_zero_size();
@@ -167,4 +203,6 @@ void main(){
     test_alloc_after_free();
     test_alignment();
     test_heap_expansion_allocate_default();
+    test_fast_forward_coalescing_asc();
+    test_fast_forward_coalescing_desc();
 }
