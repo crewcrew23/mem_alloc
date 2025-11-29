@@ -120,13 +120,28 @@ void *mem_alloc(size_t size)
     return (void *)((char *)block + sizeof(header));
 }
 
+void fast_forward_coalescing(){
+    header* current = block_header;
+    while (current != NULL)
+    {      
+        if (current->next == NULL ) break;
+        
+        if (current->free & current->next->free)
+        {
+            current->size += current->next->size;
+            current->next = current->next->next;
+        }
+        current = current->next;
+    }
+    
+}
+
 void mem_free(void *ptr)
 {
     if (ptr != NULL)
     {
-        // TODO: merge with prevous block
         ((header *)((char *)ptr - sizeof(header)))->free = 1;
-        ptr = NULL;
+        fast_forward_coalescing();
     }
 }
 void *mem_realloc(void *ptr, size_t size) {}
