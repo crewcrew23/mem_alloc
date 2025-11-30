@@ -45,6 +45,11 @@ void PASS(char* test_name){
     printf("%s:%s PASS %s\n", test_name, COLOR_GREEN, COLOR_RESET);
 }
 
+size_t align(size_t size)
+{
+    return (size + sizeof(void *) - 1) & ~(sizeof(void *) - 1);
+}
+
 extern header* block_header;
 void reset_allocator() {
     block_header = NULL;
@@ -245,6 +250,17 @@ void test_realoc_zero_value(){
     PASS("test_realoc_zero_value"); 
 }
 
+void test_simpe_calloc(){
+    reset_allocator();
+
+    int* ptr = mem_calloc(3, sizeof(int));     
+    size_t align_size = align(3 * sizeof(int));
+    ASSERT((((header *)((char *)ptr - sizeof(header)))->size == align_size), "test_simpe_calloc", "invalid size of alloc block");   
+
+    mem_free(ptr);
+    PASS("test_simpe_calloc"); 
+}
+
 void main(){
     test_init();
     test_alloc_zero_size();
@@ -260,4 +276,5 @@ void main(){
     test_simple_realoc();
     test_realoc_null_value();
     test_realoc_zero_value();
+    test_simpe_calloc();
 }

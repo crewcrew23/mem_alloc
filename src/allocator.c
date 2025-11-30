@@ -88,7 +88,6 @@ static void split_block(header *block, size_t size)
     block->next = new_block;
 }
 
-
 void *extend_heap(size_t size)
 {
     void *heap;
@@ -125,29 +124,6 @@ void *extend_heap(size_t size)
     return NULL;
 }
 
-
-void *mem_alloc(size_t size)
-{
-    if (size == 0)
-        return NULL;
-    if (block_header == NULL)
-        mem_init();
-
-    size = align(size);
-
-    header *block = find_free_block(size);
-    if (block == NULL)
-    {
-        void *new_space = extend_heap(size);
-        block = (header*)new_space;
-    }
-
-    split_block(block, size);
-    block->free = 0;
-
-    return (void *)((char *)block + sizeof(header));
-}
-
 void fast_forward_coalescing()
 {
     header *current = block_header;
@@ -164,6 +140,34 @@ void fast_forward_coalescing()
         current = current->next;
     }
 }
+
+void *mem_alloc(size_t size)
+{
+    if (size == 0)
+        return NULL;
+    if (block_header == NULL)
+        mem_init();
+
+    size = align(size);
+
+    header *block = find_free_block(size);
+    if (block == NULL)
+    {
+        fast_forward_coalescing();
+        block = find_free_block(size);
+        if (block == NULL)
+        {
+            void *new_space = extend_heap(size);
+            block = (header *)new_space;
+        }
+    }
+
+    split_block(block, size);
+    block->free = 0;
+
+    return (void *)((char *)block + sizeof(header));
+}
+
 
 void mem_free(void *ptr)
 {
@@ -190,12 +194,13 @@ size_t union_next(void *ptr)
     return 1;
 }
 
+void mem_cpy(void *dst, void *src, size_t size)
+{
+    char *src_c = (char *)src;
+    char *dst_c = (char *)dst;
 
-void mem_cpy(void* dst, void* src, size_t size) {
-    char* src_c = (char*)src;
-    char* dst_c = (char*)dst;
-    
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++)
+    {
         *dst_c++ = *src_c++;
     }
 }
@@ -205,11 +210,12 @@ void *mem_realloc(void *ptr, size_t size)
     if (ptr == NULL)
         return NULL;
 
-    if (size == 0){
+    if (size == 0)
+    {
         ((header *)((char *)ptr - sizeof(header)))->free = 1;
         return NULL;
     }
-    
+
     size = align(size);
 
     header *block = find_free_block(size);
@@ -231,23 +237,46 @@ void *mem_realloc(void *ptr, size_t size)
             if (new_block == NULL)
                 return NULL;
 
-            header* ret_block = (header*)new_block;
+            header *ret_block = (header *)new_block;
             split_block(ret_block, size);
-            ((header*)((char*)ptr - sizeof(header)))->free = 1;
-            mem_cpy((void *)((char *)ret_block + sizeof(header)), ptr, ((header*)((char*)ptr - sizeof(header)))->size);
+            ((header *)((char *)ptr - sizeof(header)))->free = 1;
+            mem_cpy((void *)((char *)ret_block + sizeof(header)), ptr, ((header *)((char *)ptr - sizeof(header)))->size);
             return (void *)((char *)ret_block + sizeof(header));
         }
         split_block(block, size);
-        ((header*)((char*)ptr - sizeof(header)))->free = 1;
-        mem_cpy((void *)((char *)block + sizeof(header)), ptr, ((header*)((char*)ptr - sizeof(header)))->size);
+        ((header *)((char *)ptr - sizeof(header)))->free = 1;
+        mem_cpy((void *)((char *)block + sizeof(header)), ptr, ((header *)((char *)ptr - sizeof(header)))->size);
         return (void *)((char *)block + sizeof(header));
     }
 
     split_block(block, size);
     block->free = 0;
     ((header *)ptr)->free = 1;
-    mem_cpy((void *)((char *)block + sizeof(header)), ptr, ((header*)((char*)ptr - sizeof(header)))->size);
+    mem_cpy((void *)((char *)block + sizeof(header)), ptr, ((header *)((char *)ptr - sizeof(header)))->size);
     return (void *)((char *)block + sizeof(header));
 }
 
-void *mem_calloc(void *ptr, size_t size) {}
+void *mem_calloc(size_t num, size_t size)
+{
+    if (num == 0 || size == 0)
+        return NULL;
+    if (block_header == NULL)
+        mem_init();
+
+    size_t align_size = align(size * num);
+    header *block = find_free_block(align_size);
+    if (block == NULL)
+    {
+        fast_forward_coalescing();
+        block = find_free_block(align_size);
+        if (block == NULL)
+        {
+            void *new_space = extend_heap(align_size);
+            block = (header *)new_space;
+        }
+    }
+
+    split_block(block, align_size);
+    block->free = 0;
+    return (void *)((char *)block + sizeof(header));
+}

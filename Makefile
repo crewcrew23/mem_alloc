@@ -3,7 +3,7 @@
 run:
 	./a.out
 build:
-	gcc -std=c99 src/main.c src/allocator.c
+	gcc -std=c99 -Wall -Wextra -Wpedantic -g -fsanitize=address,undefined src/allocator.c
 
 test:
 	gcc -std=c99  src/allocator.c test/test.c -o bin/test

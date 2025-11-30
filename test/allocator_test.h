@@ -20,7 +20,7 @@ void mem_init(void);
 void* mem_alloc(size_t size);
 void mem_free(void* ptr);
 void* mem_realloc(void* ptr, size_t size);
-void* mem_calloc(void* ptr, size_t size);
+void* mem_calloc(size_t num, size_t size);
 void alloc_heap_test_(size_t size);
 
 
